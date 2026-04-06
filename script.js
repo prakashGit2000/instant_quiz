@@ -1,6 +1,7 @@
 const API = "https://script.google.com/macros/s/AKfycbzT1m0ezJ8CXP2C4OkdviL-4ExkwV_x4tZtxpjsKjbptEWox1aaNk7IjDjSSchV-kf7/exec";
 
 
+const API = "PASTE_YOUR_WEB_APP_URL";
 
 let user = {};
 let questions = [];
@@ -27,7 +28,7 @@ function login() {
     });
 }
 
-// 🔄 LOAD STATE ON REFRESH
+// 🔄 LOAD STATE
 function loadState() {
   let savedState = localStorage.getItem("quizState");
   let savedUser = localStorage.getItem("user");
@@ -40,7 +41,7 @@ function loadState() {
     answers = data.answers || [];
     remainingTime = data.remainingTime || 0;
 
-    loadQuiz(true); // resume
+    loadQuiz(true);
   }
 }
 
@@ -62,7 +63,7 @@ function loadQuiz(isResume) {
     });
 }
 
-// ⏱️ LOAD TIMER FROM SHEET
+// ⏱️ LOAD TIMER
 function loadTimer(isResume) {
   fetch(API + "?action=time", { method: "POST" })
     .then(res => res.json())
@@ -86,73 +87,94 @@ function showQuestion() {
 
   let q = questions[currentQ];
 
-  let html = `
-    <h3>Question ${currentQ + 1} / ${questions.length}</h3>
-    <p>${q.q}</p>
-  `;
+  document.getElementById("loginBox").style.display = "none";
+  document.getElementById("quizBox").style.display = "block";
+
+  let html = `<h3>${q.q}</h3>`;
 
   q.options.forEach((opt, j) => {
     let val = ["A","B","C","D"][j];
-
-    // ✅ restore selected option
-    let checked = answers[currentQ] === val ? "checked" : "";
+    let selected = answers[currentQ] === val;
 
     html += `
-      <div>
-        <input type="radio" name="q" value="${val}" ${checked}>
+      <div onclick="selectOption('${val}', this)"
+      style="
+        border:1px solid #ddd;
+        padding:12px;
+        margin:10px 0;
+        border-radius:8px;
+        cursor:pointer;
+        background:${selected ? '#2563eb' : '#fff'};
+        color:${selected ? '#fff' : '#000'};
+      ">
         ${opt}
       </div>
     `;
   });
 
-  html += `<h3 id="timer"></h3>`;
-
   document.getElementById("quiz").innerHTML = html;
+
+  document.getElementById("progress").innerText =
+    "Question " + (currentQ + 1) + " of " + questions.length;
 
   startTimer();
 }
 
-// ⏱️ TIMER PER QUESTION
+// 🎯 SELECT OPTION
+function selectOption(value, el) {
+  answers[currentQ] = value;
+
+  let options = document.querySelectorAll("#quiz div");
+
+  options.forEach(o => {
+    o.style.background = "#fff";
+    o.style.color = "#000";
+  });
+
+  el.style.background = "#2563eb";
+  el.style.color = "#fff";
+
+  saveState();
+}
+
+// ⏱️ TIMER
 function startTimer() {
   if (timer) clearInterval(timer);
 
   timer = setInterval(() => {
     document.getElementById("timer").innerText =
-      "⏱️ Time left: " + remainingTime + " sec";
+      remainingTime + " sec";
 
     remainingTime--;
 
-    saveState(); // 🔥 save continuously
+    saveState();
 
     if (remainingTime < 0) {
       clearInterval(timer);
-
-      saveAnswer(); // save current answer
-
+      saveAnswer();
       currentQ++;
       remainingTime = timePerQ;
-
       showQuestion();
     }
   }, 1000);
 }
 
-// 💾 SAVE CURRENT ANSWER
+// 💾 SAVE ANSWER
 function saveAnswer() {
   let selected = document.querySelector('input[name="q"]:checked');
   answers[currentQ] = selected ? selected.value : "";
 }
 
-// 💾 SAVE STATE (FOR REFRESH)
+// 💾 SAVE STATE
 function saveState() {
   localStorage.setItem("quizState", JSON.stringify({
-    currentQ: currentQ,
-    answers: answers,
-    remainingTime: remainingTime
+    currentQ,
+    answers,
+    remainingTime
   }));
 }
 
-// 📤 SUBMIT QUIZ
+// 📤 SUBMIT
 function submitQuiz() {
   if (timer) clearInterval(timer);
 
@@ -173,10 +195,8 @@ function submitQuiz() {
         document.getElementById("quiz").innerHTML =
           `<h2 style="color:red;">${res.error}</h2>`;
       } else {
-        document.getElementById("quiz").innerHTML = `
-          <h2>🎯 Quiz Completed</h2>
-          <h3>Score: ${res.score} / ${questions.length}</h3>
-        `;
+        document.getElementById("quiz").innerHTML =
+          `<h2>🎯 Score: ${res.score} / ${questions.length}</h2>`;
       }
     });
 }
