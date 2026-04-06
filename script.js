@@ -1,6 +1,8 @@
 const API = "https://script.google.com/macros/s/AKfycbzT1m0ezJ8CXP2C4OkdviL-4ExkwV_x4tZtxpjsKjbptEWox1aaNk7IjDjSSchV-kf7/exec";
 
 
+const API = "https://script.google.com/macros/s/AKfycbzT1m0ezJ8CXP2C4OkdviL-4ExkwV_x4tZtxpjsKjbptEWox1aaNk7IjDjSSchV-kf7/exec";
+
 let user = {};
 let questions = [];
 let currentQ = 0;
@@ -96,8 +98,9 @@ function showQuestion() {
     let val = ["A","B","C","D"][j];
 
     html += `
-      <div class="option" onclick="selectOption('${val}')">
-        <strong>${val}.</strong> ${opt}
+      <div class="option" data-val="${val}" onclick="selectOption('${val}')">
+        <span class="circle"></span>
+        <span class="text"><b>${val}.</b> ${opt}</span>
       </div>
     `;
   });
@@ -124,8 +127,8 @@ function showCorrectAnswer(selectedVal) {
 
   let options = document.querySelectorAll(".option");
 
-  options.forEach((opt, i) => {
-    let val = ["A","B","C","D"][i];
+  options.forEach((opt) => {
+    let val = opt.getAttribute("data-val");
 
     if (val === correct) {
       opt.classList.add("correct");
