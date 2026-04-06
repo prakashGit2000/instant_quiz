@@ -1,5 +1,6 @@
 const API = "https://script.google.com/macros/s/AKfycbzT1m0ezJ8CXP2C4OkdviL-4ExkwV_x4tZtxpjsKjbptEWox1aaNk7IjDjSSchV-kf7/exec";
 
+const API = "https://script.google.com/macros/s/AKfycbzT1m0ezJ8CXP2C4OkdviL-4ExkwV_x4tZtxpjsKjbptEWox1aaNk7IjDjSSchV-kf7/exec";
 
 let user = {};
 let questions = [];
@@ -96,8 +97,8 @@ function showQuestion() {
     let val = ["A","B","C","D"][j];
 
     html += `
-      <div class="option" onclick="selectOption('${val}', this)">
-        ${opt}
+      <div class="option" onclick="selectOption('${val}')">
+        <strong>${val}.</strong> ${opt}
       </div>
     `;
   });
@@ -109,11 +110,15 @@ function showQuestion() {
   startTimer();
 }
 
-function selectOption(selectedVal, element) {
+function selectOption(selectedVal) {
   if (answered) return;
 
-  answered = true;
   clearInterval(timer);
+  showCorrectAnswer(selectedVal);
+}
+
+function showCorrectAnswer(selectedVal) {
+  answered = true;
 
   let q = questions[currentQ];
   let correct = q.answer;
@@ -155,12 +160,9 @@ function startTimer() {
     if (remainingTime < 0) {
       clearInterval(timer);
 
-      answers[currentQ] = "";
-
-      currentQ++;
-      remainingTime = timePerQ;
-
-      showQuestion();
+      if (!answered) {
+        showCorrectAnswer("");
+      }
     }
   }, 1000);
 }
