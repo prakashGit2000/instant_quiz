@@ -17,6 +17,18 @@ h2,h3 {
   text-align:center;
 }
 
+
+.correct {
+  background:#c6f6d5;
+  border:2px solid green;
+}
+
+.wrong {
+  background:#fed7d7;
+  border:2px solid red;
+}
+
+
 input {
   width:100%;
   padding:12px;
