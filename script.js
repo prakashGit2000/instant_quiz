@@ -6,10 +6,11 @@ let questions = [];
 let currentQ = 0;
 let answers = [];
 let timePerQ = 10;
+let answerDisplayTime = 5;
 let timer = null;
 let remainingTime = 0;
+let answered = false;
 
-// 🔐 LOGIN
 function login() {
   let email = document.getElementById("email").value;
 
@@ -19,6 +20,7 @@ function login() {
       if (res.status === "allowed") {
         user = res;
         localStorage.setItem("user", JSON.stringify(user));
+        document.getElementById("loginBox").style.display = "none";
         loadQuiz(false);
       } else {
         alert("❌ Not allowed");
@@ -26,7 +28,6 @@ function login() {
     });
 }
 
-// 🔄 LOAD STATE ON REFRESH
 function loadState() {
   let savedState = localStorage.getItem("quizState");
   let savedUser = localStorage.getItem("user");
@@ -39,13 +40,13 @@ function loadState() {
     answers = data.answers || [];
     remainingTime = data.remainingTime || 0;
 
-    loadQuiz(true); // resume
+    document.getElementById("loginBox").style.display = "none";
+    loadQuiz(true);
   }
 }
 
 window.onload = loadState;
 
-// 📥 LOAD QUESTIONS
 function loadQuiz(isResume) {
   fetch(API + "?action=questions", { method: "POST" })
     .then(res => res.json())
@@ -61,12 +62,12 @@ function loadQuiz(isResume) {
     });
 }
 
-// ⏱️ LOAD TIMER FROM SHEET
 function loadTimer(isResume) {
   fetch(API + "?action=time", { method: "POST" })
     .then(res => res.json())
     .then(res => {
       timePerQ = res.time;
+      answerDisplayTime = res.answer_time;
 
       if (!isResume || remainingTime <= 0) {
         remainingTime = timePerQ;
@@ -76,12 +77,13 @@ function loadTimer(isResume) {
     });
 }
 
-// 📊 SHOW QUESTION
 function showQuestion() {
   if (currentQ >= questions.length) {
     submitQuiz();
     return;
   }
+
+  answered = false;
 
   let q = questions[currentQ];
 
@@ -93,40 +95,67 @@ function showQuestion() {
   q.options.forEach((opt, j) => {
     let val = ["A","B","C","D"][j];
 
-    // ✅ restore selected option
-    let checked = answers[currentQ] === val ? "checked" : "";
-
     html += `
-      <div>
-        <input type="radio" name="q" value="${val}" ${checked}>
+      <div class="option" onclick="selectOption('${val}', this)">
         ${opt}
       </div>
     `;
   });
 
-  html += `<h3 id="timer"></h3>`;
+  html += `<div class="timer" id="timer"></div>`;
 
   document.getElementById("quiz").innerHTML = html;
 
   startTimer();
 }
 
-// ⏱️ TIMER PER QUESTION
+function selectOption(selectedVal, element) {
+  if (answered) return;
+
+  answered = true;
+  clearInterval(timer);
+
+  let q = questions[currentQ];
+  let correct = q.answer;
+
+  let options = document.querySelectorAll(".option");
+
+  options.forEach((opt, i) => {
+    let val = ["A","B","C","D"][i];
+
+    if (val === correct) {
+      opt.classList.add("correct");
+    } else if (val === selectedVal) {
+      opt.classList.add("wrong");
+    }
+  });
+
+  answers[currentQ] = selectedVal;
+
+  setTimeout(() => {
+    currentQ++;
+    remainingTime = timePerQ;
+    showQuestion();
+  }, answerDisplayTime * 1000);
+}
+
 function startTimer() {
   if (timer) clearInterval(timer);
 
   timer = setInterval(() => {
-    document.getElementById("timer").innerText =
-      "⏱️ Time left: " + remainingTime + " sec";
+    let t = document.getElementById("timer");
+    if (t) {
+      t.innerText = "⏱️ Time left: " + remainingTime + " sec";
+    }
 
     remainingTime--;
 
-    saveState(); // 🔥 save continuously
+    saveState();
 
     if (remainingTime < 0) {
       clearInterval(timer);
 
-      saveAnswer(); // save current answer
+      answers[currentQ] = "";
 
       currentQ++;
       remainingTime = timePerQ;
@@ -136,13 +165,6 @@ function startTimer() {
   }, 1000);
 }
 
-// 💾 SAVE CURRENT ANSWER
-function saveAnswer() {
-  let selected = document.querySelector('input[name="q"]:checked');
-  answers[currentQ] = selected ? selected.value : "";
-}
-
-// 💾 SAVE STATE (FOR REFRESH)
 function saveState() {
   localStorage.setItem("quizState", JSON.stringify({
     currentQ: currentQ,
@@ -151,7 +173,6 @@ function saveState() {
   }));
 }
 
-// 📤 SUBMIT QUIZ
 function submitQuiz() {
   if (timer) clearInterval(timer);
 
@@ -179,3 +200,13 @@ function submitQuiz() {
       }
     });
 }
+
+document.addEventListener("visibilitychange", function () {
+  if (document.hidden) {
+    submitQuiz();
+  }
+});
+
+window.addEventListener("beforeunload", function () {
+  submitQuiz();
+});
