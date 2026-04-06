@@ -1,4 +1,4 @@
-const API = "YOUR_WEB_APP_URL";
+const API = "https://script.google.com/macros/s/AKfycbzT1m0ezJ8CXP2C4OkdviL-4ExkwV_x4tZtxpjsKjbptEWox1aaNk7IjDjSSchV-kf7/exec";
 
 let user = {};
 let questions = [];
@@ -38,7 +38,7 @@ function login() {
       if (res.status === "allowed") {
         user = res;
         document.getElementById("loginBox").style.display = "none";
-        loadQuiz(false);
+        loadQuiz();
       } else {
         alert("❌ Not allowed");
       }
@@ -46,15 +46,17 @@ function login() {
 }
 
 // Load quiz
-function loadQuiz(isResume) {
+function loadQuiz() {
   showLoader("Loading questions...");
 
   fetch(API + "?action=questions", { method: "POST" })
     .then(res => res.json())
     .then(data => {
       questions = data;
+
       currentQ = 0;
       answers = [];
+
       loadTimer();
     });
 }
@@ -65,9 +67,12 @@ function loadTimer() {
     .then(res => res.json())
     .then(res => {
       hideLoader();
+
       timePerQ = Number(res.time) || 10;
       answerDisplayTime = Number(res.answer_time) || 3;
+
       remainingTime = timePerQ;
+
       showQuestion();
     });
 }
@@ -107,11 +112,9 @@ function selectOption(val) {
   if (answered) return;
 
   answered = true;
-  clearInterval(timer);
-
   answers[currentQ] = val;
 
-  nextQuestion();
+  moveNext();
 }
 
 // Timer
@@ -128,17 +131,20 @@ function startTimer() {
       clearInterval(timer);
 
       if (!answered) {
+        answered = true;
         answers[currentQ] = "";
-        nextQuestion();
+        moveNext();
       }
     }
   }, 1000);
 }
 
-// Next question
-function nextQuestion() {
+// Move to next question
+function moveNext() {
+  clearInterval(timer);
+
   setTimeout(() => {
-    if (currentQ === questions.length - 1) {
+    if (currentQ >= questions.length - 1) {
       submitQuiz();
     } else {
       currentQ++;
@@ -148,8 +154,10 @@ function nextQuestion() {
   }, answerDisplayTime * 1000);
 }
 
-// Submit
+// Submit quiz
 function submitQuiz() {
+  clearInterval(timer);
+
   showLoader("Submitting...");
 
   fetch(API + "?action=submit", {
@@ -166,7 +174,7 @@ function submitQuiz() {
       hideLoader();
 
       document.getElementById("quiz").innerHTML = `
-        <h2>Quiz Completed</h2>
+        <h2>🎯 Quiz Completed</h2>
         <h3>Score: ${res.score} / ${questions.length}</h3>
       `;
     });
