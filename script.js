@@ -183,7 +183,7 @@ function showCorrectAnswer(selectedVal) {
     `;
   }
 
-  let delay = answerDisplayTime * 1000;
+  let delay = answerDisplayTime * 10000;
 
   setTimeout(() => {
     if (currentQ === questions.length - 1) {
