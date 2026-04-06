@@ -10,18 +10,21 @@ let timer = null;
 let remainingTime = 0;
 let answered = false;
 
-// 🔄 Loader functions
+// Loader
 function showLoader(msg = "Loading...") {
   let loader = document.getElementById("loader");
-  loader.style.display = "block";
-  loader.querySelector("p").innerText = msg;
+  if (loader) {
+    loader.style.display = "block";
+    loader.querySelector("p").innerText = msg;
+  }
 }
 
 function hideLoader() {
-  document.getElementById("loader").style.display = "none";
+  let loader = document.getElementById("loader");
+  if (loader) loader.style.display = "none";
 }
 
-// 🔐 LOGIN
+// Login
 function login() {
   let email = document.getElementById("email").value;
 
@@ -43,7 +46,7 @@ function login() {
     });
 }
 
-// 🔄 LOAD STATE
+// Load state
 function loadState() {
   let savedState = localStorage.getItem("quizState");
   let savedUser = localStorage.getItem("user");
@@ -63,7 +66,7 @@ function loadState() {
 
 window.onload = loadState;
 
-// 📥 LOAD QUESTIONS
+// Load questions
 function loadQuiz(isResume) {
   showLoader("Loading questions...");
 
@@ -81,15 +84,15 @@ function loadQuiz(isResume) {
     });
 }
 
-// ⏱️ LOAD TIMER
+// Load timer
 function loadTimer(isResume) {
   fetch(API + "?action=time", { method: "POST" })
     .then(res => res.json())
     .then(res => {
       hideLoader();
 
-      timePerQ = Number(res.time);
-      answerDisplayTime = Number(res.answer_time);
+      timePerQ = Number(res.time) || 5;
+      answerDisplayTime = Number(res.answer_time) || 3;
 
       if (!isResume || remainingTime <= 0) {
         remainingTime = timePerQ;
@@ -99,7 +102,7 @@ function loadTimer(isResume) {
     });
 }
 
-// 📊 SHOW QUESTION
+// Show question
 function showQuestion() {
   if (currentQ >= questions.length) return;
 
@@ -130,7 +133,7 @@ function showQuestion() {
   startTimer();
 }
 
-// ✅ SELECT OPTION
+// Select option
 function selectOption(selectedVal) {
   if (answered) return;
 
@@ -140,15 +143,15 @@ function selectOption(selectedVal) {
   showCorrectAnswer(selectedVal);
 }
 
-// 🎯 SHOW CORRECT ANSWER
+// Show correct answer
 function showCorrectAnswer(selectedVal) {
   let q = questions[currentQ];
-  let correct = q.answer.toString().trim().toUpperCase();
+  let correct = (q.answer || "").toString().trim().toUpperCase();
 
   let options = document.querySelectorAll(".option");
 
   options.forEach((opt) => {
-    let val = opt.getAttribute("data-val").toString().trim().toUpperCase();
+    let val = (opt.getAttribute("data-val") || "").toString().trim().toUpperCase();
 
     opt.classList.remove("correct", "wrong");
 
@@ -156,14 +159,15 @@ function showCorrectAnswer(selectedVal) {
       opt.classList.add("correct");
     }
 
-    if (val === selectedVal && selectedVal !== correct) {
+    if (selectedVal && val === selectedVal && selectedVal !== correct) {
       opt.classList.add("wrong");
     }
   });
 
   answers[currentQ] = selectedVal;
 
-  let correctText = q.options[["A","B","C","D"].indexOf(correct)];
+  let index = ["A","B","C","D"].indexOf(correct);
+  let correctText = index !== -1 ? q.options[index] : "";
 
   document.getElementById("quiz").innerHTML += 
     `<p style="color:green;text-align:center;margin-top:10px;font-weight:bold;">
@@ -173,7 +177,7 @@ function showCorrectAnswer(selectedVal) {
   let delay = answerDisplayTime * 1000;
 
   setTimeout(() => {
-    if (currentQ === questions.length - 1) {
+    if (currentQ >= questions.length - 1) {
       submitQuiz();
     } else {
       currentQ++;
@@ -183,7 +187,7 @@ function showCorrectAnswer(selectedVal) {
   }, delay);
 }
 
-// ⏱️ TIMER
+// Timer
 function startTimer() {
   if (timer) clearInterval(timer);
 
@@ -208,7 +212,7 @@ function startTimer() {
   }, 1000);
 }
 
-// 💾 SAVE STATE
+// Save state
 function saveState() {
   localStorage.setItem("quizState", JSON.stringify({
     currentQ: currentQ,
@@ -217,7 +221,7 @@ function saveState() {
   }));
 }
 
-// 📤 SUBMIT QUIZ
+// Submit
 function submitQuiz() {
   if (timer) clearInterval(timer);
 
@@ -250,14 +254,13 @@ function submitQuiz() {
     });
 }
 
-// 🚫 TAB SWITCH
+// Anti-cheat
 document.addEventListener("visibilitychange", function () {
   if (document.hidden) {
     submitQuiz();
   }
 });
 
-// 🚫 CLOSE
 window.addEventListener("beforeunload", function () {
   submitQuiz();
 });
