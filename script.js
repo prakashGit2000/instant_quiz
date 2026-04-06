@@ -67,8 +67,8 @@ function loadTimer(isResume) {
   fetch(API + "?action=time", { method: "POST" })
     .then(res => res.json())
     .then(res => {
-      timePerQ = res.time;
-      answerDisplayTime = res.answer_time;
+      timePerQ = Number(res.time);
+      answerDisplayTime = Number(res.answer_time);
 
       if (!isResume || remainingTime <= 0) {
         remainingTime = timePerQ;
@@ -118,18 +118,17 @@ function selectOption(selectedVal) {
   showCorrectAnswer(selectedVal);
 }
 
-
-
 function showCorrectAnswer(selectedVal) {
   answered = true;
 
   let q = questions[currentQ];
-  let correct = q.answer;
+
+  let correct = q.answer.toString().trim().toUpperCase();
 
   let options = document.querySelectorAll(".option");
 
   options.forEach((opt) => {
-    let val = opt.getAttribute("data-val");
+    let val = opt.getAttribute("data-val").toString().trim().toUpperCase();
 
     opt.classList.remove("correct", "wrong");
 
@@ -157,7 +156,6 @@ function showCorrectAnswer(selectedVal) {
     showQuestion();
   }, answerDisplayTime * 1000);
 }
-
 
 function startTimer() {
   if (timer) clearInterval(timer);
