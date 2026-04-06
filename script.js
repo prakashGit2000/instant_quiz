@@ -114,15 +114,14 @@ function showQuestion() {
 function selectOption(selectedVal) {
   if (answered) return;
 
+  answered = true;
   clearInterval(timer);
+
   showCorrectAnswer(selectedVal);
 }
 
 function showCorrectAnswer(selectedVal) {
-  answered = true;
-
   let q = questions[currentQ];
-
   let correct = q.answer.toString().trim().toUpperCase();
 
   let options = document.querySelectorAll(".option");
@@ -150,11 +149,13 @@ function showCorrectAnswer(selectedVal) {
       ✔ Correct Answer: ${correct}. ${correctText}
     </p>`;
 
+  let delay = answerDisplayTime * 1000;
+
   setTimeout(() => {
     currentQ++;
     remainingTime = timePerQ;
     showQuestion();
-  }, answerDisplayTime * 1000);
+  }, delay);
 }
 
 function startTimer() {
@@ -174,6 +175,7 @@ function startTimer() {
       clearInterval(timer);
 
       if (!answered) {
+        answered = true;
         showCorrectAnswer("");
       }
     }
