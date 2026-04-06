@@ -4,6 +4,18 @@ body {
   background: linear-gradient(135deg,#667eea,#764ba2);
 }
 
+
+.option.correct {
+  background-color: green;
+  color: white;
+}
+
+.option.wrong {
+  background-color: red;
+  color: white;
+}
+
+
 .container {
   max-width:600px;
   margin:50px auto;
