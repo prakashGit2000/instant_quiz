@@ -10,12 +10,28 @@ let timer = null;
 let remainingTime = 0;
 let answered = false;
 
+// 🔄 Loader functions
+function showLoader(msg = "Loading...") {
+  let loader = document.getElementById("loader");
+  loader.style.display = "block";
+  loader.querySelector("p").innerText = msg;
+}
+
+function hideLoader() {
+  document.getElementById("loader").style.display = "none";
+}
+
+// 🔐 LOGIN
 function login() {
   let email = document.getElementById("email").value;
+
+  showLoader("Verifying user...");
 
   fetch(API + "?action=verify&email=" + email, { method: "POST" })
     .then(res => res.json())
     .then(res => {
+      hideLoader();
+
       if (res.status === "allowed") {
         user = res;
         localStorage.setItem("user", JSON.stringify(user));
@@ -27,6 +43,7 @@ function login() {
     });
 }
 
+// 🔄 LOAD STATE
 function loadState() {
   let savedState = localStorage.getItem("quizState");
   let savedUser = localStorage.getItem("user");
@@ -46,7 +63,10 @@ function loadState() {
 
 window.onload = loadState;
 
+// 📥 LOAD QUESTIONS
 function loadQuiz(isResume) {
+  showLoader("Loading questions...");
+
   fetch(API + "?action=questions", { method: "POST" })
     .then(res => res.json())
     .then(data => {
@@ -61,10 +81,13 @@ function loadQuiz(isResume) {
     });
 }
 
+// ⏱️ LOAD TIMER
 function loadTimer(isResume) {
   fetch(API + "?action=time", { method: "POST" })
     .then(res => res.json())
     .then(res => {
+      hideLoader();
+
       timePerQ = Number(res.time);
       answerDisplayTime = Number(res.answer_time);
 
@@ -76,11 +99,9 @@ function loadTimer(isResume) {
     });
 }
 
+// 📊 SHOW QUESTION
 function showQuestion() {
-  if (currentQ >= questions.length) {
-    submitQuiz();
-    return;
-  }
+  if (currentQ >= questions.length) return;
 
   answered = false;
 
@@ -109,6 +130,7 @@ function showQuestion() {
   startTimer();
 }
 
+// ✅ SELECT OPTION
 function selectOption(selectedVal) {
   if (answered) return;
 
@@ -118,6 +140,7 @@ function selectOption(selectedVal) {
   showCorrectAnswer(selectedVal);
 }
 
+// 🎯 SHOW CORRECT ANSWER
 function showCorrectAnswer(selectedVal) {
   let q = questions[currentQ];
   let correct = q.answer.toString().trim().toUpperCase();
@@ -150,12 +173,17 @@ function showCorrectAnswer(selectedVal) {
   let delay = answerDisplayTime * 1000;
 
   setTimeout(() => {
-    currentQ++;
-    remainingTime = timePerQ;
-    showQuestion();
+    if (currentQ === questions.length - 1) {
+      submitQuiz();
+    } else {
+      currentQ++;
+      remainingTime = timePerQ;
+      showQuestion();
+    }
   }, delay);
 }
 
+// ⏱️ TIMER
 function startTimer() {
   if (timer) clearInterval(timer);
 
@@ -180,6 +208,7 @@ function startTimer() {
   }, 1000);
 }
 
+// 💾 SAVE STATE
 function saveState() {
   localStorage.setItem("quizState", JSON.stringify({
     currentQ: currentQ,
@@ -188,8 +217,11 @@ function saveState() {
   }));
 }
 
+// 📤 SUBMIT QUIZ
 function submitQuiz() {
   if (timer) clearInterval(timer);
+
+  showLoader("Submitting...");
 
   localStorage.removeItem("quizState");
 
@@ -204,6 +236,8 @@ function submitQuiz() {
   })
     .then(res => res.json())
     .then(res => {
+      hideLoader();
+
       if (res.error) {
         document.getElementById("quiz").innerHTML =
           `<h2 style="color:red;">${res.error}</h2>`;
@@ -216,12 +250,14 @@ function submitQuiz() {
     });
 }
 
+// 🚫 TAB SWITCH
 document.addEventListener("visibilitychange", function () {
   if (document.hidden) {
     submitQuiz();
   }
 });
 
+// 🚫 CLOSE
 window.addEventListener("beforeunload", function () {
   submitQuiz();
 });
