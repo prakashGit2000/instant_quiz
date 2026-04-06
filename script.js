@@ -1,4 +1,4 @@
-const API = "https://script.google.com/macros/s/AKfycbx_APeOSbE6mMO0cNAIAqVvK7OCaG_gEYKo3ASfE203WnCjH5XpUyg8O4RP2A1D32Q/exec";
+const API = "https://script.google.com/macros/s/AKfycbw_9o8vprQb9CdxFK8zV5a0kz_Go9TlCFZ2hg1R4g-yBAdLRiWw7tV_zLEKuiBP4_rp/exec";
 
 let user = {};
 let questions = [];
