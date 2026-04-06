@@ -2,22 +2,44 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quiz App</title>
+<title>Online Quiz</title>
 </head>
 
-<body>
+<body style="margin:0;font-family:Arial;background:#f4f6f9;">
 
-<h2>Login</h2>
-<input type="email" id="email" placeholder="Enter Email">
-<button onclick="login()">Start Quiz</button>
+<!-- HEADER -->
+<div style="display:flex;justify-content:space-between;align-items:center;
+background:#1e293b;color:white;padding:15px 20px;">
+  <h2 style="margin:0;">🧠 Online Test</h2>
+  <div id="timer" style="font-size:18px;font-weight:bold;
+  background:#ef4444;padding:8px 15px;border-radius:8px;">
+    00
+  </div>
+</div>
 
-<h3 id="timer"></h3>
+<!-- MAIN -->
+<div style="max-width:800px;margin:30px auto;background:white;
+padding:20px;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,0.1);">
 
-<div id="quiz"></div>
+  <!-- LOGIN -->
+  <div id="loginBox">
+    <h3>Enter Email to Start</h3>
+    <input type="email" id="email" placeholder="Enter Email"
+    style="padding:10px;width:100%;margin-top:10px;border:1px solid #ccc;border-radius:6px;">
+    
+    <button onclick="login()" style="margin-top:15px;padding:12px;width:100%;
+    background:#2563eb;color:white;border:none;border-radius:8px;cursor:pointer;">
+      Start Test
+    </button>
+  </div>
 
-<button onclick="submitQuiz()">Submit</button>
+  <!-- QUIZ -->
+  <div id="quizBox" style="display:none;">
+    <div id="progress" style="margin-bottom:15px;font-weight:bold;"></div>
+    <div id="quiz"></div>
+  </div>
 
-<h3 id="result"></h3>
+</div>
 
 <script src="script.js"></script>
 
