@@ -108,15 +108,22 @@ function showQuestion() {
 }
 
 // Select option
-function selectOption(val) {
+function selectOption(selectedVal) {
   if (answered) return;
 
   answered = true;
-  answers[currentQ] = val;
+  clearInterval(timer);
 
-  showAnswer(val);
+  // 🔒 Disable all options (freeze)
+  let options = document.querySelectorAll(".option");
+  options.forEach(opt => {
+    opt.style.pointerEvents = "none";
+  });
+
+  answers[currentQ] = selectedVal;
+
+  showAnswer(selectedVal);
 }
-
 // Timer
 function startTimer() {
   if (timer) clearInterval(timer);
@@ -141,44 +148,36 @@ function startTimer() {
 
 // 🔥 SHOW ANSWER + HIGHLIGHT
 function showAnswer(selectedVal) {
-  clearInterval(timer);
-
   let q = questions[currentQ];
 
-  let correct = q.answer;
-
-  if (!correct) {
-    console.error("Missing answer", q);
-    moveNext();
-    return;
-  }
-
-  correct = correct.toString().replace(/[^A-D]/g, '').toUpperCase();
+  let correct = (q.answer || "")
+    .toString()
+    .replace(/[^A-D]/g, '')
+    .toUpperCase();
 
   let options = document.querySelectorAll(".option");
 
   options.forEach(opt => {
-    let val = opt.getAttribute("data-val");
+    let val = (opt.getAttribute("data-val") || "")
+      .toString()
+      .replace(/[^A-D]/g, '')
+      .toUpperCase();
 
+    // Reset
     opt.classList.remove("correct", "wrong");
 
+    // ✅ Correct → Green
     if (val === correct) {
-      opt.classList.add("correct"); // green
+      opt.classList.add("correct");
     }
 
+    // ❌ Wrong selected → Red
     if (selectedVal && val === selectedVal && val !== correct) {
-      opt.classList.add("wrong"); // red
+      opt.classList.add("wrong");
     }
   });
 
-  let index = ["A","B","C","D"].indexOf(correct);
-  let text = index !== -1 ? q.options[index] : "";
-
-  let box = document.getElementById("answerBox");
-  if (box) {
-    box.innerHTML = `<p style="color:green;font-weight:bold;">✔ Correct: ${correct}. ${text}</p>`;
-  }
-
+  // ⏳ Wait then move next
   setTimeout(moveNext, answerDisplayTime * 1000);
 }
 
