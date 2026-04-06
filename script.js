@@ -1,5 +1,6 @@
 const API = "https://script.google.com/macros/s/AKfycbzT1m0ezJ8CXP2C4OkdviL-4ExkwV_x4tZtxpjsKjbptEWox1aaNk7IjDjSSchV-kf7/exec";
 
+
 let user = {};
 let questions = [];
 let currentQ = 0;
@@ -8,11 +9,11 @@ let timePerQ = 10;
 let timer = null;
 let remainingTime = 0;
 
-// 🔐 LOGIN (FIXED → GET)
+// 🔐 LOGIN
 function login() {
   let email = document.getElementById("email").value;
 
-  fetch(API + "?action=verify&email=" + email)
+  fetch(API + "?action=verify&email=" + email, { method: "POST" })
     .then(res => res.json())
     .then(res => {
       if (res.status === "allowed") {
@@ -25,7 +26,7 @@ function login() {
     });
 }
 
-// 🔄 LOAD STATE
+// 🔄 LOAD STATE ON REFRESH
 function loadState() {
   let savedState = localStorage.getItem("quizState");
   let savedUser = localStorage.getItem("user");
@@ -38,19 +39,17 @@ function loadState() {
     answers = data.answers || [];
     remainingTime = data.remainingTime || 0;
 
-    loadQuiz(true);
+    loadQuiz(true); // resume
   }
 }
 
 window.onload = loadState;
 
-// 📥 LOAD QUESTIONS (FIXED → GET)
+// 📥 LOAD QUESTIONS
 function loadQuiz(isResume) {
-  fetch(API + "?action=questions")
+  fetch(API + "?action=questions", { method: "POST" })
     .then(res => res.json())
     .then(data => {
-      console.log("Questions:", data);
-
       questions = data;
 
       if (!isResume) {
@@ -62,9 +61,9 @@ function loadQuiz(isResume) {
     });
 }
 
-// ⏱️ LOAD TIMER (FIXED → GET)
+// ⏱️ LOAD TIMER FROM SHEET
 function loadTimer(isResume) {
-  fetch(API + "?action=time")
+  fetch(API + "?action=time", { method: "POST" })
     .then(res => res.json())
     .then(res => {
       timePerQ = res.time;
@@ -77,7 +76,7 @@ function loadTimer(isResume) {
     });
 }
 
-// 📊 SHOW QUESTION (FIXED)
+// 📊 SHOW QUESTION
 function showQuestion() {
   if (currentQ >= questions.length) {
     submitQuiz();
@@ -86,92 +85,73 @@ function showQuestion() {
 
   let q = questions[currentQ];
 
-  if (!q) {
-    document.getElementById("quiz").innerHTML = "⚠️ No questions found";
-    return;
-  }
-
-  document.getElementById("loginBox").style.display = "none";
-  document.getElementById("quizBox").style.display = "block";
-
-  let html = `<h3>${q.q}</h3>`;
+  let html = `
+    <h3>Question ${currentQ + 1} / ${questions.length}</h3>
+    <p>${q.q}</p>
+  `;
 
   q.options.forEach((opt, j) => {
     let val = ["A","B","C","D"][j];
-    let selected = answers[currentQ] === val;
+
+    // ✅ restore selected option
+    let checked = answers[currentQ] === val ? "checked" : "";
 
     html += `
-      <div onclick="selectOption('${val}', this)"
-      style="
-        border:1px solid #ddd;
-        padding:12px;
-        margin:10px 0;
-        border-radius:8px;
-        cursor:pointer;
-        background:${selected ? '#2563eb' : '#fff'};
-        color:${selected ? '#fff' : '#000'};
-      ">
+      <div>
+        <input type="radio" name="q" value="${val}" ${checked}>
         ${opt}
       </div>
     `;
   });
 
-  document.getElementById("quiz").innerHTML = html;
+  html += `<h3 id="timer"></h3>`;
 
-  document.getElementById("progress").innerText =
-    "Question " + (currentQ + 1) + " of " + questions.length;
+  document.getElementById("quiz").innerHTML = html;
 
   startTimer();
 }
 
-// 🎯 SELECT OPTION
-function selectOption(value, el) {
-  answers[currentQ] = value;
-
-  let options = document.querySelectorAll("#quiz div");
-
-  options.forEach(o => {
-    o.style.background = "#fff";
-    o.style.color = "#000";
-  });
-
-  el.style.background = "#2563eb";
-  el.style.color = "#fff";
-
-  saveState();
-}
-
-// ⏱️ TIMER
+// ⏱️ TIMER PER QUESTION
 function startTimer() {
   if (timer) clearInterval(timer);
 
   timer = setInterval(() => {
     document.getElementById("timer").innerText =
-      remainingTime + " sec";
+      "⏱️ Time left: " + remainingTime + " sec";
 
     remainingTime--;
 
-    saveState();
+    saveState(); // 🔥 save continuously
 
     if (remainingTime < 0) {
       clearInterval(timer);
+
+      saveAnswer(); // save current answer
+
       currentQ++;
       remainingTime = timePerQ;
+
       showQuestion();
     }
   }, 1000);
 }
 
-// 💾 SAVE STATE
+// 💾 SAVE CURRENT ANSWER
+function saveAnswer() {
+  let selected = document.querySelector('input[name="q"]:checked');
+  answers[currentQ] = selected ? selected.value : "";
+}
+
+// 💾 SAVE STATE (FOR REFRESH)
 function saveState() {
   localStorage.setItem("quizState", JSON.stringify({
-    currentQ,
-    answers,
-    remainingTime
+    currentQ: currentQ,
+    answers: answers,
+    remainingTime: remainingTime
   }));
 }
 
-// 📤 SUBMIT
+// 📤 SUBMIT QUIZ
 function submitQuiz() {
   if (timer) clearInterval(timer);
 
@@ -192,8 +172,10 @@ function submitQuiz() {
         document.getElementById("quiz").innerHTML =
           `<h2 style="color:red;">${res.error}</h2>`;
       } else {
-        document.getElementById("quiz").innerHTML =
-          `<h2>🎯 Score: ${res.score} / ${questions.length}</h2>`;
+        document.getElementById("quiz").innerHTML = `
+          <h2>🎯 Quiz Completed</h2>
+          <h3>Score: ${res.score} / ${questions.length}</h3>
+        `;
       }
     });
 }
