@@ -1,7 +1,5 @@
 const API = "https://script.google.com/macros/s/AKfycbzT1m0ezJ8CXP2C4OkdviL-4ExkwV_x4tZtxpjsKjbptEWox1aaNk7IjDjSSchV-kf7/exec";
 
-
-
 let user = {};
 let questions = [];
 let currentQ = 0;
@@ -82,6 +80,7 @@ function showQuestion() {
   if (currentQ >= questions.length) return;
 
   answered = false;
+  remainingTime = timePerQ;
 
   let q = questions[currentQ];
 
@@ -114,7 +113,6 @@ function selectOption(selectedVal) {
   answered = true;
   clearInterval(timer);
 
-  // 🔒 Disable all options (freeze)
   let options = document.querySelectorAll(".option");
   options.forEach(opt => {
     opt.style.pointerEvents = "none";
@@ -124,6 +122,7 @@ function selectOption(selectedVal) {
 
   showAnswer(selectedVal);
 }
+
 // Timer
 function startTimer() {
   if (timer) clearInterval(timer);
@@ -146,20 +145,16 @@ function startTimer() {
   }, 1000);
 }
 
-// 🔥 SHOW ANSWER + HIGHLIGHT
+// Show answer
 function showAnswer(selectedVal) {
   let q = questions[currentQ];
 
-  console.log("DEBUG answer:", q.answer); // 🔍 check this in console
+  let correct = (q.answer || "")
+    .toString()
+    .replace(/[^A-D]/g, '')
+    .toUpperCase();
 
-  let correct = (q.answer || q.correct || "")
-  .toString()
-  .replace(/[^A-D]/g, '')
-  .toUpperCase();
-
-  // ❗ If still empty → skip highlight but continue
   if (!correct) {
-    console.error("❌ Missing correct answer for question:", q);
     setTimeout(moveNext, answerDisplayTime * 1000);
     return;
   }
@@ -167,19 +162,14 @@ function showAnswer(selectedVal) {
   let options = document.querySelectorAll(".option");
 
   options.forEach(opt => {
-    let val = (opt.getAttribute("data-val") || "")
-      .toString()
-      .replace(/[^A-D]/g, '')
-      .toUpperCase();
+    let val = opt.getAttribute("data-val");
 
     opt.classList.remove("correct", "wrong");
 
-    // ✅ Correct → green
     if (val === correct) {
       opt.classList.add("correct");
     }
 
-    // ❌ Wrong → red
     if (selectedVal && val === selectedVal && val !== correct) {
       opt.classList.add("wrong");
     }
@@ -190,65 +180,16 @@ function showAnswer(selectedVal) {
 
 // Move next
 function moveNext() {
+  clearInterval(timer);
+
   if (currentQ >= questions.length - 1) {
     submitQuiz();
   } else {
     currentQ++;
+    answered = false;
     remainingTime = timePerQ;
     showQuestion();
   }
-}
-
-
-function showReview(res) {
-  if (!res || !res.questions) {
-    document.getElementById("quiz").innerHTML =
-      "<h2>Error loading review</h2>";
-    return;
-  }
-
-  let html = `
-    <h2>🎯 Quiz Completed</h2>
-    <h3>Score: ${res.score} / ${res.questions.length}</h3>
-    <hr>
-  `;
-
-  res.questions.forEach((q, i) => {
-    let correct = (q.answer || "")
-      .toString()
-      .replace(/[^A-D]/g, '')
-      .toUpperCase();
-
-    let userAns = (answers[i] || "")
-      .toString()
-      .replace(/[^A-D]/g, '')
-      .toUpperCase();
-
-    html += `<div style="margin-bottom:20px;">`;
-    html += `<p><b>Q${i + 1}. ${q.q}</b></p>`;
-
-    q.options.forEach((opt, j) => {
-      let val = ["A","B","C","D"][j];
-
-      let style = "";
-
-      if (val === correct) {
-        style = "color:green;font-weight:bold;";
-      }
-
-      if (val === userAns && val !== correct) {
-        style = "color:red;font-weight:bold;";
-      }
-
-      html += `<div style="${style}">${val}. ${opt}</div>`;
-    });
-
-    html += `<p>Your Answer: ${userAns || "Not Attempted"}</p>`;
-    html += `<p>Correct Answer: ${correct}</p>`;
-    html += `<hr></div>`;
-  });
-
-  document.getElementById("quiz").innerHTML = html;
 }
 
 // Submit
@@ -268,20 +209,45 @@ function submitQuiz() {
     .then(res => {
       hideLoader();
 
-      // ❌ handle error
       if (res.error) {
         document.getElementById("quiz").innerHTML =
           `<h2 style="color:red;">${res.error}</h2>`;
         return;
       }
 
-      // ✅ safe check
-      if (!res.questions) {
-        document.getElementById("quiz").innerHTML =
-          `<h2>Error: No data received</h2>`;
-        return;
-      }
-
       showReview(res);
     });
+}
+
+// Review
+function showReview(res) {
+  let html = `
+    <h2>🎯 Quiz Completed</h2>
+    <h3>Score: ${res.score} / ${res.questions.length}</h3>
+    <hr>
+  `;
+
+  res.questions.forEach((q, i) => {
+    let correct = q.answer;
+    let userAns = answers[i] || "";
+
+    html += `<div style="margin-bottom:20px;">`;
+    html += `<p><b>Q${i + 1}. ${q.q}</b></p>`;
+
+    q.options.forEach((opt, j) => {
+      let val = ["A","B","C","D"][j];
+
+      let style = "";
+      if (val === correct) style = "color:green;font-weight:bold;";
+      if (val === userAns && val !== correct) style = "color:red;font-weight:bold;";
+
+      html += `<div style="${style}">${val}. ${opt}</div>`;
+    });
+
+    html += `<p>Your Answer: ${userAns || "Not Attempted"}</p>`;
+    html += `<p>Correct Answer: ${correct}</p>`;
+    html += `<hr></div>`;
+  });
+
+  document.getElementById("quiz").innerHTML = html;
 }
