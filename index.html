@@ -9,7 +9,6 @@ body {
   margin:0;
   font-family: 'Segoe UI', sans-serif;
   background: linear-gradient(135deg,#667eea,#764ba2);
-  color:#333;
 }
 
 .container {
@@ -50,15 +49,29 @@ button:hover {
 }
 
 .option {
+  display:flex;
+  align-items:center;
+  gap:10px;
   padding:12px;
-  margin:8px 0;
-  border-radius:8px;
+  margin:10px 0;
+  border-radius:10px;
   border:1px solid #ddd;
   cursor:pointer;
+  transition:0.3s;
+  font-size:16px;
 }
 
 .option:hover {
-  background:#f1f5ff;
+  background:#eef2ff;
+}
+
+.option::before {
+  content:"";
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  border:2px solid #667eea;
+  display:inline-block;
 }
 
 .correct {
