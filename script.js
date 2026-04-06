@@ -149,12 +149,14 @@ function selectOption(selectedVal) {
 // Show correct answer
 function showCorrectAnswer(selectedVal) {
   let q = questions[currentQ];
-  let correct = (q.answer || "").toString().trim().toUpperCase();
+
+  // 🔥 FIX: prevent undefined crash
+  let correct = (q.answer || "A").toString().trim().toUpperCase();
 
   let options = document.querySelectorAll(".option");
 
   options.forEach((opt) => {
-    let val = opt.getAttribute("data-val");
+    let val = (opt.getAttribute("data-val") || "").toString().trim().toUpperCase();
 
     opt.classList.remove("correct", "wrong");
 
@@ -172,7 +174,6 @@ function showCorrectAnswer(selectedVal) {
   let index = ["A","B","C","D"].indexOf(correct);
   let correctText = index !== -1 ? q.options[index] : "";
 
-  // ✅ SAFE DOM UPDATE (no re-render issue)
   let answerBox = document.getElementById("answerBox");
   if (answerBox) {
     answerBox.innerHTML = `
@@ -182,7 +183,7 @@ function showCorrectAnswer(selectedVal) {
     `;
   }
 
-  let delay = Number(answerDisplayTime || 3) * 1000;
+  let delay = answerDisplayTime * 1000;
 
   setTimeout(() => {
     if (currentQ === questions.length - 1) {
@@ -210,15 +211,13 @@ function startTimer() {
     saveState();
 
     if (remainingTime < 0) {
-  clearInterval(timer);
+      clearInterval(timer);
 
-  if (!answered) {
-    answered = true;
-    showCorrectAnswer("");
-  }
-}
-    
-   
+      if (!answered) {
+        answered = true;
+        showCorrectAnswer("");
+      }
+    }
   }, 1000);
 }
 
