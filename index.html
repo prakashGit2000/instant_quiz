@@ -3,15 +3,96 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Quiz App</title>
+
+<style>
+body {
+  margin:0;
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg,#667eea,#764ba2);
+  color:#333;
+}
+
+.container {
+  max-width:600px;
+  margin:50px auto;
+  background:white;
+  padding:25px;
+  border-radius:15px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.2);
+}
+
+h2,h3 {
+  text-align:center;
+}
+
+input {
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  border-radius:8px;
+  border:1px solid #ccc;
+}
+
+button {
+  width:100%;
+  padding:12px;
+  margin-top:15px;
+  background:#667eea;
+  color:white;
+  border:none;
+  border-radius:8px;
+  font-size:16px;
+  cursor:pointer;
+}
+
+button:hover {
+  background:#5a67d8;
+}
+
+.option {
+  padding:12px;
+  margin:8px 0;
+  border-radius:8px;
+  border:1px solid #ddd;
+  cursor:pointer;
+}
+
+.option:hover {
+  background:#f1f5ff;
+}
+
+.correct {
+  background:#c6f6d5;
+  border:1px solid green;
+}
+
+.wrong {
+  background:#fed7d7;
+  border:1px solid red;
+}
+
+.timer {
+  text-align:center;
+  font-weight:bold;
+  color:#e53e3e;
+  margin-top:10px;
+}
+
+</style>
 </head>
 
 <body>
 
-<h2>Login</h2>
-<input type="email" id="email" placeholder="Enter Email">
-<button onclick="login()">Start Quiz</button>
+<div class="container">
+  <h2>🎯 Online Quiz</h2>
 
-<div id="quiz"></div>
+  <div id="loginBox">
+    <input type="email" id="email" placeholder="Enter Email">
+    <button onclick="login()">Start Quiz</button>
+  </div>
+
+  <div id="quiz"></div>
+</div>
 
 <script src="script.js"></script>
 
