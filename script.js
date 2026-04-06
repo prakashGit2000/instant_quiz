@@ -150,19 +150,23 @@ function selectOption(selectedVal) {
 function showCorrectAnswer(selectedVal) {
   let q = questions[currentQ];
 
- let correct = q.answer;
+  let correct = q.answer;
 
-if (!correct) {
-  console.error("❌ Missing answer for question:", q);
-  return; // stop instead of assuming A
-}
+  if (!correct) {
+    console.error("❌ Missing answer:", q);
+    return;
+  }
 
-correct = correct.toString().trim().toUpperCase();
+  // 🔥 STRONG CLEANING
+  correct = correct.toString().replace(/[^A-D]/g, '').toUpperCase();
 
   let options = document.querySelectorAll(".option");
 
   options.forEach((opt) => {
-    let val = (opt.getAttribute("data-val") || "").toString().trim().toUpperCase();
+    let val = (opt.getAttribute("data-val") || "")
+      .toString()
+      .replace(/[^A-D]/g, '')
+      .toUpperCase();
 
     opt.classList.remove("correct", "wrong");
 
