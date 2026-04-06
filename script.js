@@ -150,8 +150,14 @@ function selectOption(selectedVal) {
 function showCorrectAnswer(selectedVal) {
   let q = questions[currentQ];
 
-  // 🔥 FIX: prevent undefined crash
-  let correct = (q.answer || "A").toString().trim().toUpperCase();
+ let correct = q.answer;
+
+if (!correct) {
+  console.error("❌ Missing answer for question:", q);
+  return; // stop instead of assuming A
+}
+
+correct = correct.toString().trim().toUpperCase();
 
   let options = document.querySelectorAll(".option");
 
@@ -183,7 +189,7 @@ function showCorrectAnswer(selectedVal) {
     `;
   }
 
-  let delay = answerDisplayTime * 10000;
+  let delay = answerDisplayTime * 1000;
 
   setTimeout(() => {
     if (currentQ === questions.length - 1) {
