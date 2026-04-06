@@ -131,12 +131,19 @@ function showCorrectAnswer(selectedVal) {
 
     if (val === correct) {
       opt.classList.add("correct");
-    } else if (val === selectedVal) {
+    } else if (val === selectedVal && selectedVal !== "") {
       opt.classList.add("wrong");
     }
   });
 
   answers[currentQ] = selectedVal;
+
+  let correctText = q.options[["A","B","C","D"].indexOf(correct)];
+
+  document.getElementById("quiz").innerHTML += 
+    `<p style="color:green;text-align:center;margin-top:10px;font-weight:bold;">
+      ✔ Correct Answer: ${correct}. ${correctText}
+    </p>`;
 
   setTimeout(() => {
     currentQ++;
