@@ -150,10 +150,19 @@ function startTimer() {
 function showAnswer(selectedVal) {
   let q = questions[currentQ];
 
+  console.log("DEBUG answer:", q.answer); // 🔍 check this in console
+
   let correct = (q.answer || "")
     .toString()
     .replace(/[^A-D]/g, '')
     .toUpperCase();
+
+  // ❗ If still empty → skip highlight but continue
+  if (!correct) {
+    console.error("❌ Missing correct answer for question:", q);
+    setTimeout(moveNext, answerDisplayTime * 1000);
+    return;
+  }
 
   let options = document.querySelectorAll(".option");
 
@@ -163,21 +172,19 @@ function showAnswer(selectedVal) {
       .replace(/[^A-D]/g, '')
       .toUpperCase();
 
-    // Reset
     opt.classList.remove("correct", "wrong");
 
-    // ✅ Correct → Green
+    // ✅ Correct → green
     if (val === correct) {
       opt.classList.add("correct");
     }
 
-    // ❌ Wrong selected → Red
+    // ❌ Wrong → red
     if (selectedVal && val === selectedVal && val !== correct) {
       opt.classList.add("wrong");
     }
   });
 
-  // ⏳ Wait then move next
   setTimeout(moveNext, answerDisplayTime * 1000);
 }
 
