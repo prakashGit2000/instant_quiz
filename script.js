@@ -192,6 +192,53 @@ function moveNext() {
   }
 }
 
+
+function showReview(res) {
+  let html = `
+    <h2>🎯 Quiz Completed</h2>
+    <h3>Score: ${res.score} / ${res.questions.length}</h3>
+    <hr>
+  `;
+
+  res.questions.forEach((q, i) => {
+    let correct = (q.answer || "")
+      .toString()
+      .replace(/[^A-D]/g, '')
+      .toUpperCase();
+
+    let userAns = (answers[i] || "")
+      .toString()
+      .replace(/[^A-D]/g, '')
+      .toUpperCase();
+
+    html += `<div style="margin-bottom:20px;">`;
+    html += `<p><b>Q${i + 1}. ${q.q}</b></p>`;
+
+    q.options.forEach((opt, j) => {
+      let val = ["A","B","C","D"][j];
+
+      let style = "";
+
+      if (val === correct) {
+        style = "color:green;font-weight:bold;";
+      }
+
+      if (val === userAns && val !== correct) {
+        style = "color:red;font-weight:bold;";
+      }
+
+      html += `<div style="${style}">${val}. ${opt}</div>`;
+    });
+
+    html += `<p>Your Answer: ${userAns || "Not Attempted"}</p>`;
+    html += `<p>Correct Answer: ${correct}</p>`;
+    html += `<hr></div>`;
+  });
+
+  document.getElementById("quiz").innerHTML = html;
+}
+
+
 // Submit
 function submitQuiz() {
   showLoader("Submitting...");
@@ -209,9 +256,6 @@ function submitQuiz() {
     .then(res => {
       hideLoader();
 
-      document.getElementById("quiz").innerHTML = `
-        <h2>🎯 Quiz Completed</h2>
-        <h3>Score: ${res.score} / ${questions.length}</h3>
-      `;
+      showReview(res);
     });
 }
