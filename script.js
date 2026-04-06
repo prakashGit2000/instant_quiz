@@ -152,10 +152,10 @@ function showAnswer(selectedVal) {
 
   console.log("DEBUG answer:", q.answer); // 🔍 check this in console
 
-  let correct = (q.answer || "")
-    .toString()
-    .replace(/[^A-D]/g, '')
-    .toUpperCase();
+  let correct = (q.answer || q.correct || "")
+  .toString()
+  .replace(/[^A-D]/g, '')
+  .toUpperCase();
 
   // ❗ If still empty → skip highlight but continue
   if (!correct) {
