@@ -1,5 +1,7 @@
 const API = "https://script.google.com/macros/s/AKfycbzT1m0ezJ8CXP2C4OkdviL-4ExkwV_x4tZtxpjsKjbptEWox1aaNk7IjDjSSchV-kf7/exec";
 
+
+
 let user = {};
 let questions = [];
 let currentQ = 0;
@@ -53,10 +55,8 @@ function loadQuiz() {
     .then(res => res.json())
     .then(data => {
       questions = data;
-
       currentQ = 0;
       answers = [];
-
       loadTimer();
     });
 }
@@ -94,13 +94,13 @@ function showQuestion() {
     let val = ["A","B","C","D"][j];
 
     html += `
-      <div class="option" onclick="selectOption('${val}')">
+      <div class="option" data-val="${val}" onclick="selectOption('${val}')">
         <b>${val}.</b> ${opt}
       </div>
     `;
   });
 
-  html += `<div id="timer"></div>`;
+  html += `<div id="answerBox"></div><div id="timer"></div>`;
 
   document.getElementById("quiz").innerHTML = html;
 
@@ -114,7 +114,7 @@ function selectOption(val) {
   answered = true;
   answers[currentQ] = val;
 
-  moveNext();
+  showAnswer(val);
 }
 
 // Timer
@@ -133,31 +133,68 @@ function startTimer() {
       if (!answered) {
         answered = true;
         answers[currentQ] = "";
-        moveNext();
+        showAnswer("");
       }
     }
   }, 1000);
 }
 
-// Move to next question
-function moveNext() {
+// 🔥 SHOW ANSWER + HIGHLIGHT
+function showAnswer(selectedVal) {
   clearInterval(timer);
 
-  setTimeout(() => {
-    if (currentQ >= questions.length - 1) {
-      submitQuiz();
-    } else {
-      currentQ++;
-      remainingTime = timePerQ;
-      showQuestion();
+  let q = questions[currentQ];
+
+  let correct = q.answer;
+
+  if (!correct) {
+    console.error("Missing answer", q);
+    moveNext();
+    return;
+  }
+
+  correct = correct.toString().replace(/[^A-D]/g, '').toUpperCase();
+
+  let options = document.querySelectorAll(".option");
+
+  options.forEach(opt => {
+    let val = opt.getAttribute("data-val");
+
+    opt.classList.remove("correct", "wrong");
+
+    if (val === correct) {
+      opt.classList.add("correct"); // green
     }
-  }, answerDisplayTime * 1000);
+
+    if (selectedVal && val === selectedVal && val !== correct) {
+      opt.classList.add("wrong"); // red
+    }
+  });
+
+  let index = ["A","B","C","D"].indexOf(correct);
+  let text = index !== -1 ? q.options[index] : "";
+
+  let box = document.getElementById("answerBox");
+  if (box) {
+    box.innerHTML = `<p style="color:green;font-weight:bold;">✔ Correct: ${correct}. ${text}</p>`;
+  }
+
+  setTimeout(moveNext, answerDisplayTime * 1000);
 }
 
-// Submit quiz
-function submitQuiz() {
-  clearInterval(timer);
+// Move next
+function moveNext() {
+  if (currentQ >= questions.length - 1) {
+    submitQuiz();
+  } else {
+    currentQ++;
+    remainingTime = timePerQ;
+    showQuestion();
+  }
+}
 
+// Submit
+function submitQuiz() {
   showLoader("Submitting...");
 
   fetch(API + "?action=submit", {
