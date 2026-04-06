@@ -126,7 +126,10 @@ function showQuestion() {
     `;
   });
 
-  html += `<div class="timer" id="timer"></div>`;
+  html += `
+    <div id="answerBox" style="margin-top:10px;"></div>
+    <div class="timer" id="timer"></div>
+  `;
 
   document.getElementById("quiz").innerHTML = html;
 
@@ -151,7 +154,7 @@ function showCorrectAnswer(selectedVal) {
   let options = document.querySelectorAll(".option");
 
   options.forEach((opt) => {
-    let val = (opt.getAttribute("data-val") || "").toString().trim().toUpperCase();
+    let val = opt.getAttribute("data-val");
 
     opt.classList.remove("correct", "wrong");
 
@@ -169,15 +172,20 @@ function showCorrectAnswer(selectedVal) {
   let index = ["A","B","C","D"].indexOf(correct);
   let correctText = index !== -1 ? q.options[index] : "";
 
-  document.getElementById("quiz").innerHTML += 
-    `<p style="color:green;text-align:center;margin-top:10px;font-weight:bold;">
-      ✔ Correct Answer: ${correct}. ${correctText}
-    </p>`;
+  // ✅ SAFE DOM UPDATE (no re-render issue)
+  let answerBox = document.getElementById("answerBox");
+  if (answerBox) {
+    answerBox.innerHTML = `
+      <p style="color:green;text-align:center;font-weight:bold;">
+        ✔ Correct Answer: ${correct}. ${correctText}
+      </p>
+    `;
+  }
 
-  let delay = answerDisplayTime * 1000;
+  let delay = Number(answerDisplayTime || 3) * 1000;
 
   setTimeout(() => {
-    if (currentQ >= questions.length - 1) {
+    if (currentQ === questions.length - 1) {
       submitQuiz();
     } else {
       currentQ++;
@@ -202,13 +210,15 @@ function startTimer() {
     saveState();
 
     if (remainingTime < 0) {
-      clearInterval(timer);
+  clearInterval(timer);
 
-      if (!answered) {
-        answered = true;
-        showCorrectAnswer("");
-      }
-    }
+  if (!answered) {
+    answered = true;
+    showCorrectAnswer("");
+  }
+}
+    
+   
   }, 1000);
 }
 
