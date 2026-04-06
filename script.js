@@ -1,6 +1,5 @@
 const API = "https://script.google.com/macros/s/AKfycbzT1m0ezJ8CXP2C4OkdviL-4ExkwV_x4tZtxpjsKjbptEWox1aaNk7IjDjSSchV-kf7/exec";
 
-
 let user = {};
 let questions = [];
 let currentQ = 0;
@@ -9,11 +8,11 @@ let timePerQ = 10;
 let timer = null;
 let remainingTime = 0;
 
-// 🔐 LOGIN
+// 🔐 LOGIN (FIXED → GET)
 function login() {
   let email = document.getElementById("email").value;
 
-  fetch(API + "?action=verify&email=" + email, { method: "POST" })
+  fetch(API + "?action=verify&email=" + email)
     .then(res => res.json())
     .then(res => {
       if (res.status === "allowed") {
@@ -45,11 +44,13 @@ function loadState() {
 
 window.onload = loadState;
 
-// 📥 LOAD QUESTIONS
+// 📥 LOAD QUESTIONS (FIXED → GET)
 function loadQuiz(isResume) {
-  fetch(API + "?action=questions", { method: "POST" })
+  fetch(API + "?action=questions")
     .then(res => res.json())
     .then(data => {
+      console.log("Questions:", data);
+
       questions = data;
 
       if (!isResume) {
@@ -61,9 +62,9 @@ function loadQuiz(isResume) {
     });
 }
 
-// ⏱️ LOAD TIMER
+// ⏱️ LOAD TIMER (FIXED → GET)
 function loadTimer(isResume) {
-  fetch(API + "?action=time", { method: "POST" })
+  fetch(API + "?action=time")
     .then(res => res.json())
     .then(res => {
       timePerQ = res.time;
@@ -76,7 +77,7 @@ function loadTimer(isResume) {
     });
 }
 
-// 📊 SHOW QUESTION
+// 📊 SHOW QUESTION (FIXED)
 function showQuestion() {
   if (currentQ >= questions.length) {
     submitQuiz();
@@ -84,6 +85,11 @@ function showQuestion() {
   }
 
   let q = questions[currentQ];
+
+  if (!q) {
+    document.getElementById("quiz").innerHTML = "⚠️ No questions found";
+    return;
+  }
 
   document.getElementById("loginBox").style.display = "none";
   document.getElementById("quizBox").style.display = "block";
@@ -149,18 +155,11 @@ function startTimer() {
 
     if (remainingTime < 0) {
       clearInterval(timer);
-      saveAnswer();
       currentQ++;
       remainingTime = timePerQ;
       showQuestion();
     }
   }, 1000);
-}
-
-// 💾 SAVE ANSWER
-function saveAnswer() {
-  let selected = document.querySelector('input[name="q"]:checked');
-  answers[currentQ] = selected ? selected.value : "";
 }
 
 // 💾 SAVE STATE
