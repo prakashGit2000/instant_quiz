@@ -20,34 +20,34 @@ function login() {
       if (res.status === "allowed") {
         user = res;
         localStorage.setItem("user", JSON.stringify(user));
-        loadQuiz();
+        loadQuiz(false);
       } else {
         alert("❌ Not allowed");
       }
     });
 }
 
-// 🔄 LOAD STATE
+// 🔄 LOAD STATE ON REFRESH
 function loadState() {
-  let state = localStorage.getItem("quizState");
+  let savedState = localStorage.getItem("quizState");
   let savedUser = localStorage.getItem("user");
 
-  if (state && savedUser) {
+  if (savedState && savedUser) {
     user = JSON.parse(savedUser);
 
-    let data = JSON.parse(state);
-    currentQ = data.currentQ;
-    answers = data.answers;
-    remainingTime = data.remainingTime;
+    let data = JSON.parse(savedState);
+    currentQ = data.currentQ || 0;
+    answers = data.answers || [];
+    remainingTime = data.remainingTime || 0;
 
-    loadQuiz(true);
+    loadQuiz(true); // resume
   }
 }
 
 window.onload = loadState;
 
 // 📥 LOAD QUESTIONS
-function loadQuiz(isResume = false) {
+function loadQuiz(isResume) {
   fetch(API + "?action=questions", { method: "POST" })
     .then(res => res.json())
     .then(data => {
@@ -62,14 +62,16 @@ function loadQuiz(isResume = false) {
     });
 }
 
-// ⏱️ LOAD TIMER
+// ⏱️ LOAD TIMER FROM SHEET
 function loadTimer(isResume) {
   fetch(API + "?action=time", { method: "POST" })
     .then(res => res.json())
     .then(res => {
       timePerQ = res.time;
 
-      if (!isResume) remainingTime = timePerQ;
+      if (!isResume || remainingTime <= 0) {
+        remainingTime = timePerQ;
+      }
 
       showQuestion();
     });
@@ -85,13 +87,22 @@ function showQuestion() {
   let q = questions[currentQ];
 
   let html = `
-    <h3>Q ${currentQ+1} / ${questions.length}</h3>
+    <h3>Question ${currentQ + 1} / ${questions.length}</h3>
     <p>${q.q}</p>
   `;
 
   q.options.forEach((opt, j) => {
     let val = ["A","B","C","D"][j];
-    html += `<input type="radio" name="q" value="${val}">${opt}<br>`;
+
+    // ✅ restore selected option
+    let checked = answers[currentQ] === val ? "checked" : "";
+
+    html += `
+      <div>
+        <input type="radio" name="q" value="${val}" ${checked}>
+        ${opt}
+      </div>
+    `;
   });
 
   html += `<h3 id="timer"></h3>`;
@@ -101,44 +112,47 @@ function showQuestion() {
   startTimer();
 }
 
-// ⏱️ TIMER
+// ⏱️ TIMER PER QUESTION
 function startTimer() {
   if (timer) clearInterval(timer);
 
   timer = setInterval(() => {
     document.getElementById("timer").innerText =
-      "Time: " + remainingTime;
+      "⏱️ Time left: " + remainingTime + " sec";
 
     remainingTime--;
 
-    saveState();
+    saveState(); // 🔥 save continuously
 
     if (remainingTime < 0) {
       clearInterval(timer);
-      saveAnswer();
+
+      saveAnswer(); // save current answer
+
       currentQ++;
       remainingTime = timePerQ;
+
       showQuestion();
     }
   }, 1000);
 }
 
-// 💾 SAVE STATE
-function saveState() {
-  localStorage.setItem("quizState", JSON.stringify({
-    currentQ,
-    answers,
-    remainingTime
-  }));
-}
-
-// 💾 SAVE ANSWER
+// 💾 SAVE CURRENT ANSWER
 function saveAnswer() {
   let selected = document.querySelector('input[name="q"]:checked');
   answers[currentQ] = selected ? selected.value : "";
 }
 
-// 📤 SUBMIT
+// 💾 SAVE STATE (FOR REFRESH)
+function saveState() {
+  localStorage.setItem("quizState", JSON.stringify({
+    currentQ: currentQ,
+    answers: answers,
+    remainingTime: remainingTime
+  }));
+}
+
+// 📤 SUBMIT QUIZ
 function submitQuiz() {
   if (timer) clearInterval(timer);
 
@@ -155,7 +169,14 @@ function submitQuiz() {
   })
     .then(res => res.json())
     .then(res => {
-      document.getElementById("quiz").innerHTML =
-        `<h2>Score: ${res.score}</h2>`;
+      if (res.error) {
+        document.getElementById("quiz").innerHTML =
+          `<h2 style="color:red;">${res.error}</h2>`;
+      } else {
+        document.getElementById("quiz").innerHTML = `
+          <h2>🎯 Quiz Completed</h2>
+          <h3>Score: ${res.score} / ${questions.length}</h3>
+        `;
+      }
     });
 }
