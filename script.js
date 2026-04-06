@@ -1,11 +1,11 @@
-const API = "https://script.google.com/macros/s/AKfycbzT1m0ezJ8CXP2C4OkdviL-4ExkwV_x4tZtxpjsKjbptEWox1aaNk7IjDjSSchV-kf7/exec";
+const API = "YOUR_WEB_APP_URL";
 
 let user = {};
 let questions = [];
 let currentQ = 0;
 let answers = [];
 let timePerQ = 10;
-let answerDisplayTime = 5;
+let answerDisplayTime = 3;
 let timer = null;
 let remainingTime = 0;
 let answered = false;
@@ -28,7 +28,7 @@ function hideLoader() {
 function login() {
   let email = document.getElementById("email").value;
 
-  showLoader("Verifying user...");
+  showLoader("Verifying...");
 
   fetch(API + "?action=verify&email=" + email, { method: "POST" })
     .then(res => res.json())
@@ -37,7 +37,6 @@ function login() {
 
       if (res.status === "allowed") {
         user = res;
-        localStorage.setItem("user", JSON.stringify(user));
         document.getElementById("loginBox").style.display = "none";
         loadQuiz(false);
       } else {
@@ -46,27 +45,7 @@ function login() {
     });
 }
 
-// Load state
-function loadState() {
-  let savedState = localStorage.getItem("quizState");
-  let savedUser = localStorage.getItem("user");
-
-  if (savedState && savedUser) {
-    user = JSON.parse(savedUser);
-
-    let data = JSON.parse(savedState);
-    currentQ = data.currentQ || 0;
-    answers = data.answers || [];
-    remainingTime = data.remainingTime || 0;
-
-    document.getElementById("loginBox").style.display = "none";
-    loadQuiz(true);
-  }
-}
-
-window.onload = loadState;
-
-// Load questions
+// Load quiz
 function loadQuiz(isResume) {
   showLoader("Loading questions...");
 
@@ -74,30 +53,21 @@ function loadQuiz(isResume) {
     .then(res => res.json())
     .then(data => {
       questions = data;
-
-      if (!isResume) {
-        currentQ = 0;
-        answers = [];
-      }
-
-      loadTimer(isResume);
+      currentQ = 0;
+      answers = [];
+      loadTimer();
     });
 }
 
 // Load timer
-function loadTimer(isResume) {
+function loadTimer() {
   fetch(API + "?action=time", { method: "POST" })
     .then(res => res.json())
     .then(res => {
       hideLoader();
-
-      timePerQ = Number(res.time) || 5;
+      timePerQ = Number(res.time) || 10;
       answerDisplayTime = Number(res.answer_time) || 3;
-
-      if (!isResume || remainingTime <= 0) {
-        remainingTime = timePerQ;
-      }
-
+      remainingTime = timePerQ;
       showQuestion();
     });
 }
@@ -119,17 +89,13 @@ function showQuestion() {
     let val = ["A","B","C","D"][j];
 
     html += `
-      <div class="option" data-val="${val}" onclick="selectOption('${val}')">
-        <span class="circle"></span>
-        <span class="text"><b>${val}.</b> ${opt}</span>
+      <div class="option" onclick="selectOption('${val}')">
+        <b>${val}.</b> ${opt}
       </div>
     `;
   });
 
-  html += `
-    <div id="answerBox" style="margin-top:10px;"></div>
-    <div class="timer" id="timer"></div>
-  `;
+  html += `<div id="timer"></div>`;
 
   document.getElementById("quiz").innerHTML = html;
 
@@ -137,73 +103,15 @@ function showQuestion() {
 }
 
 // Select option
-function selectOption(selectedVal) {
+function selectOption(val) {
   if (answered) return;
 
   answered = true;
   clearInterval(timer);
 
-  showCorrectAnswer(selectedVal);
-}
+  answers[currentQ] = val;
 
-// Show correct answer
-function showCorrectAnswer(selectedVal) {
-  let q = questions[currentQ];
-  let correct = q.answer;
-
-// ✅ fallback instead of stopping
-if (!correct || correct === "") {
-  console.error("❌ Missing answer, defaulting skip:", q);
-  correct = "";
-} else {
-  correct = correct.toString().replace(/[^A-D]/g, '').toUpperCase();
-}
- 
-
-  let options = document.querySelectorAll(".option");
-
-  options.forEach((opt) => {
-    let val = (opt.getAttribute("data-val") || "")
-      .toString()
-      .replace(/[^A-D]/g, '')
-      .toUpperCase();
-
-    opt.classList.remove("correct", "wrong");
-
-    if (val === correct) {
-      opt.classList.add("correct");
-    }
-
-    if (selectedVal && val === selectedVal && selectedVal !== correct) {
-      opt.classList.add("wrong");
-    }
-  });
-
-  answers[currentQ] = selectedVal;
-
-  let index = ["A","B","C","D"].indexOf(correct);
-  let correctText = index !== -1 ? q.options[index] : "";
-
-  let answerBox = document.getElementById("answerBox");
-  if (answerBox) {
-    answerBox.innerHTML = `
-      <p style="color:green;text-align:center;font-weight:bold;">
-        ✔ Correct Answer: ${correct}. ${correctText}
-      </p>
-    `;
-  }
-
-  let delay = answerDisplayTime * 1000;
-
-  setTimeout(() => {
-    if (currentQ === questions.length - 1) {
-      submitQuiz();
-    } else {
-      currentQ++;
-      remainingTime = timePerQ;
-      showQuestion();
-    }
-  }, delay);
+  nextQuestion();
 }
 
 // Timer
@@ -212,47 +120,43 @@ function startTimer() {
 
   timer = setInterval(() => {
     let t = document.getElementById("timer");
-    if (t) {
-      t.innerText = "⏱️ Time left: " + remainingTime + " sec";
-    }
+    if (t) t.innerText = "⏱️ " + remainingTime + " sec";
 
     remainingTime--;
-
-    saveState();
 
     if (remainingTime < 0) {
       clearInterval(timer);
 
       if (!answered) {
-        answered = true;
-        showCorrectAnswer("");
+        answers[currentQ] = "";
+        nextQuestion();
       }
     }
   }, 1000);
 }
 
-// Save state
-function saveState() {
-  localStorage.setItem("quizState", JSON.stringify({
-    currentQ: currentQ,
-    answers: answers,
-    remainingTime: remainingTime
-  }));
+// Next question
+function nextQuestion() {
+  setTimeout(() => {
+    if (currentQ === questions.length - 1) {
+      submitQuiz();
+    } else {
+      currentQ++;
+      remainingTime = timePerQ;
+      showQuestion();
+    }
+  }, answerDisplayTime * 1000);
 }
 
 // Submit
 function submitQuiz() {
-  if (timer) clearInterval(timer);
-
   showLoader("Submitting...");
-
-  localStorage.removeItem("quizState");
 
   fetch(API + "?action=submit", {
     method: "POST",
     body: JSON.stringify({
-      rollno: user.rollno,
       email: user.email,
+      rollno: user.rollno,
       name: user.name,
       answers: answers
     })
@@ -261,25 +165,9 @@ function submitQuiz() {
     .then(res => {
       hideLoader();
 
-      if (res.error) {
-        document.getElementById("quiz").innerHTML =
-          `<h2 style="color:red;">${res.error}</h2>`;
-      } else {
-        document.getElementById("quiz").innerHTML = `
-          <h2>🎯 Quiz Completed</h2>
-          <h3>Score: ${res.score} / ${questions.length}</h3>
-        `;
-      }
+      document.getElementById("quiz").innerHTML = `
+        <h2>Quiz Completed</h2>
+        <h3>Score: ${res.score} / ${questions.length}</h3>
+      `;
     });
 }
-
-// Anti-cheat
-document.addEventListener("visibilitychange", function () {
-  if (document.hidden) {
-    submitQuiz();
-  }
-});
-
-window.addEventListener("beforeunload", function () {
-  submitQuiz();
-});
