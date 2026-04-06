@@ -118,6 +118,8 @@ function selectOption(selectedVal) {
   showCorrectAnswer(selectedVal);
 }
 
+
+
 function showCorrectAnswer(selectedVal) {
   answered = true;
 
@@ -129,9 +131,13 @@ function showCorrectAnswer(selectedVal) {
   options.forEach((opt) => {
     let val = opt.getAttribute("data-val");
 
+    opt.classList.remove("correct", "wrong");
+
     if (val === correct) {
       opt.classList.add("correct");
-    } else if (val === selectedVal && selectedVal !== "") {
+    }
+
+    if (val === selectedVal && selectedVal !== correct) {
       opt.classList.add("wrong");
     }
   });
@@ -151,6 +157,7 @@ function showCorrectAnswer(selectedVal) {
     showQuestion();
   }, answerDisplayTime * 1000);
 }
+
 
 function startTimer() {
   if (timer) clearInterval(timer);
