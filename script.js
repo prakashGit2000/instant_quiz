@@ -149,16 +149,16 @@ function selectOption(selectedVal) {
 // Show correct answer
 function showCorrectAnswer(selectedVal) {
   let q = questions[currentQ];
-
   let correct = q.answer;
 
-  if (!correct) {
-    console.error("❌ Missing answer:", q);
-    return;
-  }
-
-  // 🔥 STRONG CLEANING
+// ✅ fallback instead of stopping
+if (!correct || correct === "") {
+  console.error("❌ Missing answer, defaulting skip:", q);
+  correct = "";
+} else {
   correct = correct.toString().replace(/[^A-D]/g, '').toUpperCase();
+}
+ 
 
   let options = document.querySelectorAll(".option");
 
