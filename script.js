@@ -221,6 +221,13 @@ function submitQuiz() {
 
 // Review
 function showReview(res) {
+  if (!res || !res.questions || !Array.isArray(res.questions)) {
+    document.getElementById("quiz").innerHTML =
+      "<h2 style='color:red;'>Error: Invalid response from server</h2>";
+    console.error("Invalid response:", res);
+    return;
+  }
+
   let html = `
     <h2>🎯 Quiz Completed</h2>
     <h3>Score: ${res.score} / ${res.questions.length}</h3>
@@ -228,8 +235,8 @@ function showReview(res) {
   `;
 
   res.questions.forEach((q, i) => {
-    let correct = q.answer;
-    let userAns = answers[i] || "";
+    let correct = (q.answer || "").toUpperCase();
+    let userAns = (answers[i] || "").toUpperCase();
 
     html += `<div style="margin-bottom:20px;">`;
     html += `<p><b>Q${i + 1}. ${q.q}</b></p>`;
