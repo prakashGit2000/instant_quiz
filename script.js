@@ -201,6 +201,12 @@ function moveNext() {
 
 
 function showReview(res) {
+  if (!res || !res.questions) {
+    document.getElementById("quiz").innerHTML =
+      "<h2>Error loading review</h2>";
+    return;
+  }
+
   let html = `
     <h2>🎯 Quiz Completed</h2>
     <h3>Score: ${res.score} / ${res.questions.length}</h3>
@@ -245,7 +251,6 @@ function showReview(res) {
   document.getElementById("quiz").innerHTML = html;
 }
 
-
 // Submit
 function submitQuiz() {
   showLoader("Submitting...");
@@ -262,6 +267,20 @@ function submitQuiz() {
     .then(res => res.json())
     .then(res => {
       hideLoader();
+
+      // ❌ handle error
+      if (res.error) {
+        document.getElementById("quiz").innerHTML =
+          `<h2 style="color:red;">${res.error}</h2>`;
+        return;
+      }
+
+      // ✅ safe check
+      if (!res.questions) {
+        document.getElementById("quiz").innerHTML =
+          `<h2>Error: No data received</h2>`;
+        return;
+      }
 
       showReview(res);
     });
