@@ -35,13 +35,22 @@ function login() {
     .then(res => {
       hideLoader();
 
-      if (res.status === "allowed") {
-        user = res;
-        document.getElementById("loginBox").style.display = "none";
-        loadQuiz();
-      } else {
-        alert("❌ Not allowed");
-      }
+    if (res.status === "allowed") {
+  user = res;
+  document.getElementById("loginBox").style.display = "none";
+  loadQuiz();
+} else {
+  // show exact backend message
+  let msg = res.message || "Not allowed";
+
+  alert("❌ " + msg);
+
+  // OPTIONAL (better UX)
+  document.getElementById("quiz").innerHTML =
+    `<h2 style="color:red;text-align:center;">❌ ${msg}</h2>`;
+}
+
+      
     });
 }
 
